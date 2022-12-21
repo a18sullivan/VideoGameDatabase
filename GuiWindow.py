@@ -2,7 +2,7 @@ import sqlite3 as sql
 import sys
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QApplication, QPushButton, QLineEdit, QLabel, QRadioButton, QMessageBox, \
-    QListView, QCheckBox
+    QListWidget, QCheckBox
 
 
 class search_window(QMainWindow):
@@ -12,7 +12,7 @@ class search_window(QMainWindow):
         self.label = QLabel(self)
         self.search_bar = QLineEdit(self)
         self.finalize = QPushButton(self)
-        self.table = QListView(self)
+        self.table = QListWidget(self)
         self.pc = QCheckBox(self)
         self.console = QCheckBox(self)
         self.initUI()
@@ -44,10 +44,44 @@ class search_window(QMainWindow):
         self.table.move(10, 110)
 
     def search(self):
+        self.table.clear()
         conn = sql.connect("game_database.sqlite3")
         cursor = conn.cursor()
 
         query = self.search_bar.text()
+        pc = self.pc.isChecked()
+        console = self.console.isChecked()
+
+        if pc == True and console == True:
+            sql2=(f"""SELECT * From Console WHERE Console.title LIKE '{query}%'""")
+            cursor.execute(sql2)
+            results = cursor.fetchall()
+            for x in results:
+                input=str(x)
+                self.table.addItem(input)
+            sql2=(f"""SELECT * From PC WHERE title LIKE '{query}%'""")
+            cursor.execute(sql2)
+            results2=cursor.fetchall()
+            for x in results2:
+                input=str(x)
+                self.table.addItem(input)
+        elif pc:
+            sql2 = (f"""SELECT * From PC WHERE title LIKE '{query}%'""")
+            cursor.execute(sql2)
+            results = cursor.fetchall()
+            for x in results:
+                input=str(x)
+                self.table.addItem(input)
+        elif console:
+            sql2 = (f"""SELECT * From Console WHERE Console.title LIKE '{query}%'""")
+            cursor.execute(sql2)
+            results = cursor.fetchall()
+            for x in results:
+                input = str(x)
+                self.table.addItem(input)
+        else:
+            self.table.addItem("No results")
+        conn.close()
 
 
 class update_window(QMainWindow):
