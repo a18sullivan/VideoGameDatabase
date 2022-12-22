@@ -115,7 +115,7 @@ class update_window(QMainWindow):
         self.initUI()
 
     def initUI(self):
-        self.setGeometry(200, 200, 600, 600)
+        self.setGeometry(200, 200, 432, 600)
         self.title.setText("Update a Game")
         self.title.move(160, 10)
         self.title.resize(111, 61)
@@ -269,7 +269,7 @@ class update_window(QMainWindow):
     def update_video_game(self):
         conn = sql.connect("game_database.sqlite3")
         cursor = conn.cursor()
-        cursor.execute("""SELECT EXISTS(SELECT 1 FROM Region WHERE regionID = ?)""", (self.game_region.text(),))
+        cursor.execute("""SELECT count(*) FROM Region WHERE regionID = ?""", (self.game_region.text(),))
         flag = cursor.fetchone()[0]
         if self.game_type == None:
             msg = QMessageBox()
@@ -280,7 +280,7 @@ class update_window(QMainWindow):
             msg.setText("Error - region not present")
             msg.exec_()
         elif self.game_type:    #Console Update
-            cursor.execute("""SELECT EXISTS(SELECT 1 FROM System WHERE systemID = ?)""", (self.operating_system.text(),))
+            cursor.execute("""SELECT count(*) FROM System WHERE systemID = ?""", (self.operating_system.text(),))
             flag1 = cursor.fetchone()[0]
             if flag1 == 1:
                 query = ("""UPDATE Console SET
@@ -295,7 +295,8 @@ class update_window(QMainWindow):
                 msg.setText("Error - system not present")
                 msg.exec_()
         else:   #PC Update
-            cursor.execute("""SELECT EXISTS(SELECT 1 FROM OS WHERE osID = ?)""", (self.operating_system.text(),))
+            #cursor.execute("""SELECT EXISTS(SELECT 1 FROM OS WHERE osID = ?)""", (self.operating_system.text(),))
+            cursor.execute("""SELECT count(*) FROM OS WHERE osID = ?""", (self.operating_system.text(),))
             flag1 = cursor.fetchone()[0]
             if flag1 == 1:
                 query = ("""UPDATE PC SET
@@ -450,7 +451,8 @@ class add_window(QMainWindow):
             sID = cursor.fetchone()
             sID = sID[0]
         if pc:
-            cursor.execute("""SELECT count(title) FROM PC WHERE title is (?)""", (game_title,))
+            cursor.execute("""SELECT count(title) FROM Console WHERE title is ? AND numID is ?""", (game_title, numID))
+            cursor.execute("""SELECT count(title) FROM PC WHERE title is ? AND PC.year is ? AND osID is ?""", (game_title, release_year, operating_system))
             exists = cursor.fetchone()
             if exists[0] == 0:
                 cursor.execute("""INSERT INTO PC (title,regionID,seriesID,year,osID) VALUES(?,?,?,?,?)""",
@@ -465,7 +467,7 @@ class add_window(QMainWindow):
                 msg.setText("game already exists")
                 msg.exec_()
         if console:
-            cursor.execute("""SELECT count(title) FROM Console WHERE title is (?)""", (game_title,))
+            cursor.execute("""SELECT count(title) FROM Console WHERE title is ? AND numID is ?""", (game_title, numID))
             print(1)
             exists = cursor.fetchone()
             if exists[0] == 0:
