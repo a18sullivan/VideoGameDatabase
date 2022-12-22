@@ -54,27 +54,43 @@ class search_window(QMainWindow):
         console = self.console.isChecked()
 
         if pc == True and console == True:
-            sql2 = ("""SELECT * From Console WHERE Console.title LIKE '%' || ? || '%'""")
+            sql2 = ("""SELECT title, regionName, seriesName, systemName, numID, patch From Console 
+                        JOIN Region USING (regionID)
+                        JOIN Series USING (seriesID)
+                        JOIN System USING (systemID) 
+                        WHERE Console.title LIKE '%' || ? || '%'""")
             cursor.execute(sql2, (query,))
             results = cursor.fetchall()
             for x in results:
                 input=str(x)
                 self.table.addItem(input)
-            sql2=(f"""SELECT * From PC WHERE title LIKE '%' || ? || '%'""")
+            sql2 = (f"""SELECT title, regionName, seriesName, PC.year, osName From PC 
+                        JOIN Region USING (regionID)
+                        JOIN Series USING (seriesID)
+                        JOIN OS USING (osID) 
+                        WHERE title LIKE '%' || ? || '%'""")
             cursor.execute(sql2, (query,))
             results2=cursor.fetchall()
             for x in results2:
                 input=str(x)
                 self.table.addItem(input)
         elif pc:
-            sql2 = (f"""SELECT * From PC WHERE title LIKE '%' || ? || '%'""")
+            sql2 = (f"""SELECT title, regionName, seriesName, PC.year, osName From PC 
+                        JOIN Region USING (regionID)
+                        JOIN Series USING (seriesID)
+                        JOIN OS USING (osID) 
+                        WHERE title LIKE '%' || ? || '%'""")
             cursor.execute(sql2, (query,))
             results = cursor.fetchall()
             for x in results:
                 input=str(x)
                 self.table.addItem(input)
         elif console:
-            sql2 = (f"""SELECT * From Console WHERE Console.title LIKE '%' || ? || '%'""")
+            sql2 = ("""SELECT title, regionName, seriesName, systemName, numID, patch From Console 
+                                    JOIN Region USING (regionID)
+                                    JOIN Series USING (seriesID)
+                                    JOIN System USING (systemID) 
+                                    WHERE Console.title LIKE '%' || ? || '%'""")
             cursor.execute(sql2, (query,))
             results = cursor.fetchall()
             for x in results:
@@ -92,13 +108,13 @@ class update_window(QMainWindow):
         self.title = QLabel(self)
         self.game_title = QLineEdit(self)
         self.game_region = QLineEdit(self)
-        self.game_region.setValidator(QIntValidator())
+        #self.game_region.setValidator(QIntValidator())
         self.series_title = QLineEdit(self)
-        self.series_title.setValidator(QIntValidator())
+        #self.series_title.setValidator(QIntValidator())
         self.release_year = QLineEdit(self)
         self.release_year.setValidator(QIntValidator())
         self.operating_system = QLineEdit(self)
-        self.operating_system.setValidator(QIntValidator())
+        #self.operating_system.setValidator(QIntValidator())
         self.search_button = QPushButton(self)
         self.patch = QLineEdit(self)
         self.numID = QLineEdit(self)
@@ -189,6 +205,8 @@ class update_window(QMainWindow):
         self.numID.setText("")
         self.patch.setText("")
     def on_select(self, item):
+        conn = sql.connect("game_database.sqlite3")
+        cursor = conn.cursor()
         selected = item.text()
         selected = selected.strip("()")
         selected = selected.replace("'", "")
@@ -196,13 +214,22 @@ class update_window(QMainWindow):
         for i in range(len(selected)):  #sanitizing a bit
             selected[i] = selected[i].strip(" ")
         print(selected)
+        self.where = (selected[0], selected[3], selected[4])
+
         if len(selected) == 6: #detecting and swapping between Console and PC entries
+            sql2 = ("""SELECT * From Console
+                                            JOIN Region USING (regionID)
+                                            JOIN Series USING (seriesID)
+                                            JOIN System USING (systemID)
+                                            WHERE Console.title = ? AND systemName = ? AND numID = ?""")
+            cursor.execute(sql2, self.where)
+            results = cursor.fetchall()
+            self.where = (results[0][0], results[0][3], results[0][4])
             self.game_type = True #Console flag
             self.numID.show()
             self.patch.show()
             self.release_year.hide()
             self.operating_system.setPlaceholderText("Console")
-            self.where = (selected[0], selected[3], selected[4])
             #setting boxes with existing data
             self.game_title.setText(selected[0])
             self.game_region.setText(selected[1])
@@ -211,12 +238,19 @@ class update_window(QMainWindow):
             self.numID.setText(selected[4])
             self.patch.setText(selected[5])
         elif len(selected) == 5:
+            sql2 = ("""SELECT * From PC
+                                                        JOIN Region USING (regionID)
+                                                        JOIN Series USING (seriesID)
+                                                        JOIN OS USING (osID)
+                                                        WHERE PC.title = ? AND PC.year = ? AND osName = ?""")
+            cursor.execute(sql2, self.where)
+            results = cursor.fetchall()
+            self.where = (results[0][0], results[0][3], results[0][4])
             self.game_type = False #PC flag
             self.numID.hide()
             self.patch.hide()
             self.release_year.show()
             self.operating_system.setPlaceholderText("OS")
-            self.where = (selected[0], selected[3], selected[4])
             #setting boxes with existing data
             self.game_title.setText(selected[0])
             self.game_region.setText(selected[1])
@@ -235,27 +269,47 @@ class update_window(QMainWindow):
         console = self.console.isChecked()
 
         if pc == True and console == True:
-            sql2 = (f"""SELECT * From Console WHERE Console.title LIKE '%' || ? || '%'""")
+            #sql2 = (f"""SELECT * From Console WHERE Console.title LIKE '%' || ? || '%'""")
+            sql2 = ("""SELECT title, regionName, seriesName, systemName, numID, patch From Console 
+                        JOIN Region USING (regionID)
+                        JOIN Series USING (seriesID)
+                        JOIN System USING (systemID) 
+                        WHERE Console.title LIKE '%' || ? || '%'""")
             cursor.execute(sql2, (query,))
             results = cursor.fetchall()
             for x in results:
                 input = str(x)
                 self.table.addItem(input)
-            sql2 = (f"""SELECT * From PC WHERE title LIKE '%' || ? || '%'""")
+            #sql2 = (f"""SELECT * From PC WHERE title LIKE '%' || ? || '%'""")
+            sql2 = (f"""SELECT title, regionName, seriesName, PC.year, osName From PC 
+                        JOIN Region USING (regionID)
+                        JOIN Series USING (seriesID)
+                        JOIN OS USING (osID) 
+                        WHERE title LIKE '%' || ? || '%'""")
             cursor.execute(sql2, (query,))
             results2 = cursor.fetchall()
             for x in results2:
                 input = str(x)
                 self.table.addItem(input)
         elif pc:
-            sql2 = (f"""SELECT * From PC WHERE title LIKE '%' || ? || '%'""")
+            #sql2 = (f"""SELECT * From PC WHERE title LIKE '%' || ? || '%'""")
+            sql2 = (f"""SELECT title, regionName, seriesName, PC.year, osName From PC 
+                        JOIN Region USING (regionID)
+                        JOIN Series USING (seriesID)
+                        JOIN OS USING (osID) 
+                        WHERE title LIKE '%' || ? || '%'""")
             cursor.execute(sql2, (query,))
             results = cursor.fetchall()
             for x in results:
                 input = str(x)
                 self.table.addItem(input)
         elif console:
-            sql2 = (f"""SELECT * From Console WHERE Console.title LIKE '%' || ? || '%'""")
+            #sql2 = (f"""SELECT * From Console WHERE Console.title LIKE '%' || ? || '%'""")
+            sql2 = ("""SELECT title, regionName, seriesName, systemName, numID, patch From Console 
+                       JOIN Region USING (regionID)
+                       JOIN Series USING (seriesID)
+                       JOIN System USING (systemID) 
+                       WHERE Console.title LIKE '%' || ? || '%'""")
             cursor.execute(sql2, (query,))
             results = cursor.fetchall()
             for x in results:
@@ -266,46 +320,83 @@ class update_window(QMainWindow):
         conn.close()
         self.clear_select()
 
+
     def update_video_game(self):
         conn = sql.connect("game_database.sqlite3")
         cursor = conn.cursor()
-        cursor.execute("""SELECT count(*) FROM Region WHERE regionID = ?""", (self.game_region.text(),))
-        flag = cursor.fetchone()[0]
+        series = self.series_title.text()   #creating NULLs in proper places
+        cursor.execute("""SELECT * FROM Series WHERE seriesName = ?""", (self.series_title.text(),))
+        series = cursor.fetchone()
+        cursor.execute("""SELECT * FROM Region WHERE regionName = ?""", (self.game_region.text(),))
+        regionID = cursor.fetchone()
         if self.game_type == None:
             msg = QMessageBox()
             msg.setText("Error - no game selected")
             msg.exec_()
-        elif flag != 1:
+        elif series == None:
+            msg = QMessageBox()
+            msg.setText("Error - series not present")
+            msg.exec_()
+        elif regionID == None:
             msg = QMessageBox()
             msg.setText("Error - region not present")
             msg.exec_()
         elif self.game_type:    #Console Update
-            cursor.execute("""SELECT count(*) FROM System WHERE systemID = ?""", (self.operating_system.text(),))
-            flag1 = cursor.fetchone()[0]
-            if flag1 == 1:
-                query = ("""UPDATE Console SET
-                title = ?, regionID = ?, seriesID = ?, systemID = ?, numID = ?, patch = ?
-                WHERE title = ? AND systemID = ? AND numID = ?""")
-                cursor.execute(query, (self.game_title.text(), self.game_region.text(), self.series_title.text(),
-                         self.operating_system.text(), self.numID.text(), self.patch.text(),
-                         self.where[0], self.where[1], self.where[2]))
-                conn.commit()
+            if series == "":
+                series = None
+            else:
+                series = series[0]
+            regionID = regionID[0]
+            patch = self.patch.text()   #creating NULLs in proper places
+            if patch == "":
+                patch = None
+            cursor.execute("""SELECT * FROM System WHERE systemName = ?""", (self.operating_system.text(),))
+            systemID = cursor.fetchone()
+            if systemID != None:
+                try:
+                    query = ("""UPDATE Console SET
+                    title = ?, regionID = ?, seriesID = ?, systemID = ?, numID = ?, patch = ?
+                    WHERE title = ? AND systemID = ? AND numID = ?""")
+                    cursor.execute(query, (self.game_title.text(), regionID, series,
+                             systemID[0], self.numID.text(), patch,
+                             self.where[0], self.where[1], self.where[2]))
+                    conn.commit()
+                    msg = QMessageBox()
+                    msg.setText("Game updated successfully")
+                    msg.exec_()
+                except Exception as e:
+                    msg = QMessageBox()
+                    msg.setText("Error - Game already in Database")
+                    msg.exec_()
             else:
                 msg = QMessageBox()
                 msg.setText("Error - system not present")
                 msg.exec_()
         else:   #PC Update
+            if series == "":
+                series = None
+            else:
+                series = series[0]
+            regionID = regionID[0]
             #cursor.execute("""SELECT EXISTS(SELECT 1 FROM OS WHERE osID = ?)""", (self.operating_system.text(),))
-            cursor.execute("""SELECT count(*) FROM OS WHERE osID = ?""", (self.operating_system.text(),))
-            flag1 = cursor.fetchone()[0]
-            if flag1 == 1:
-                query = ("""UPDATE PC SET
-                            title = ?, regionID = ?, seriesID = ?, year = ?, osID = ?
-                            WHERE title = ? AND year = ? AND osID = ?""")
-                cursor.execute(query, (self.game_title.text(), self.game_region.text(), self.series_title.text(),
-                         self.release_year.text(), self.operating_system.text(),
-                         self.where[0], self.where[1], self.where[2]))
-                conn.commit()
+            cursor.execute("""SELECT * FROM OS WHERE osName = ?""", (self.operating_system.text(),))
+            osID = cursor.fetchone()
+            if osID != None:
+                try:
+                    query = ("""UPDATE PC SET
+                                title = ?, regionID = ?, seriesID = ?, year = ?, osID = ?
+                                WHERE title = ? AND year = ? AND osID = ?""")
+                    cursor.execute(query, (self.game_title.text(), regionID, series,
+                             self.release_year.text(), osID[0],
+                             self.where[0], self.where[1], self.where[2]))
+                    conn.commit()
+                    msg = QMessageBox()
+                    msg.setText("Game updated successfully")
+                    msg.exec_()
+                except Exception as e:
+                    msg = QMessageBox()
+                    msg.setText("Error - Game already in Database")
+                    msg.exec_()
             else:
                 msg = QMessageBox()
                 msg.setText("Error - OS not present")
@@ -385,11 +476,15 @@ class add_window(QMainWindow):
         pc = self.systemType1.isChecked()
         console = self.systemType2.isChecked()
         game_title = self.game_title.text()
-        series_title = self.series_title.text()
+        series_title = self.series_title.text()  # creating NULLs in proper places
+        if series_title == "":
+            series_title = None
         game_region = self.game_region.text()
         release_year = self.release_year.text()
         operating_system = self.operating_system.text()
-        patch = self.patch.text()
+        patch = self.patch.text()   # creating NULLs in proper places
+        if patch == "":
+            patch = None
         numID = self.numID.text()
 
         if pc:
