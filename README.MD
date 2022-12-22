@@ -3,7 +3,7 @@ then install all necessary libraries that are imported in GuiWindow.py then simp
 The code will take care of the rest to exit the program just x out of the Gui window
 
 I have implemented the add and search functionality along with a fully functioning GUI
-both of these functionality work fine but do not have extensive error handling, so they will not prevent things
-such as sql attacks or improper data entry
+both of these functionality work fine but do not have extensive error handling, but are parameterized 
+to avoid SQL injection attacks
 
-The update functionality has not been implemented yet
+The update functionality has now been implemented
